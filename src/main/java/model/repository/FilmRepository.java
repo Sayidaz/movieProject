@@ -2,6 +2,8 @@ package model.repository;
 
 import model.Film;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.*;
 import java.util.*;
 
@@ -40,11 +42,19 @@ public class FilmRepository {
                     trailerURL TEXT
                 );
                 """;
+        String createTableUser = """
+                CREATE TABLE Users (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    username VARCHAR(50) UNIQUE NOT NULL,
+                    password_hash VARCHAR(255) NOT NULL
+                );
+                """;
         try (Statement stmt = databaseConnection.createStatement()) {
             stmt.execute(createTableSQL);
-            System.out.println("Table 'Films' initialisée avec succès !");
+            stmt.execute(createTableUser);
+            System.out.println("Tables 'Films' et 'Users' initialisée avec succès !");
         } catch (SQLException e) {
-            System.err.println("Erreur lors de la création de la table : " + e.getMessage());
+            System.err.println("Erreur lors de la création des tables : " + e.getMessage());
         }
     }
 
@@ -133,5 +143,48 @@ public class FilmRepository {
         }
         return recommendations;
     }
+    public boolean createUser(String username, String password) {
+        String insertQuery = "INSERT INTO Users (username, password_hash) VALUES (?, ?)";
+        try (PreparedStatement pstmt = databaseConnection.prepareStatement(insertQuery)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, hashPassword(password)); // Hash the password before storing it
+            pstmt.executeUpdate();
+            System.out.println("User account created successfully: " + username);
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Failed to create user account: " + e.getMessage());
+            return false;
+        }
+    }
+    public boolean loginUser(String username, String password) {
+        String selectQuery = "SELECT * FROM Users WHERE username = ? AND password_hash = ?";
+        try (PreparedStatement pstmt = databaseConnection.prepareStatement(selectQuery)) {
+            pstmt.setString(1, username);
+            pstmt.setString(2, hashPassword(password)); // Hash the password for comparison
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                System.out.println("User login successful: " + username);
+                return true;
+            }
+        } catch (SQLException e) {
+            System.err.println("Failed to log in user: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private String hashPassword(String password) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(password.getBytes());
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Password hashing failed", e);
+        }
+    }
+
 
 }

@@ -18,6 +18,9 @@
         <HBox spacing="20" alignment="CENTER_LEFT" style="-fx-background-color: #2a2a2a; -fx-padding: 15;">
             <Label text="Movinsights" style="-fx-text-fill: white; -fx-font-size: 28; -fx-font-weight: bold;"/>
         </HBox>
+            <Label fx:id="loggedInUserLabel" layoutX="20" layoutY="20" text="Not logged in" />
+            <Button fx:id="logoutButton" layoutX="20" layoutY="60" text="Logout" onAction="#handleLogout" />
+
     </top>
 
     <!-- Zone centrale avec les composants principaux -->
